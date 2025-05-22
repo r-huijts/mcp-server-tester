@@ -459,6 +459,25 @@ The canonical test generator lives at `src/test-generator/TestGenerator.ts`.
 Older files such as `src/generator/TestGenerator.ts` have been removed to avoid
 confusion. All imports should reference the module under `src/test-generator/`.
 
+## Packaging and Distribution
+
+The project can be published as an npm package for easier installation.
+
+```bash
+# Compile TypeScript sources
+npm run build
+
+# Create a tarball of the package
+npm pack
+
+# Publish to npm (requires npm credentials)
+npm publish
+```
+
+Only the contents of the `dist` folder and essential documentation are included
+in the published package. The build step runs automatically when `npm publish`
+is executed.
+
 ## License
 
 This project is licensed under the [MIT](LICENSE) license.
