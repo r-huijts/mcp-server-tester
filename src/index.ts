@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { MCPClient } from './client/MCPClient';
-import { ConfigLoader, DEFAULT_CONFIG_FILENAME } from './client/ConfigLoader';
+import { ConfigLoader, DEFAULT_CONFIG_FILENAME, CompleteConfig } from './client/ConfigLoader';
 import { TestGenerator } from './test-generator/TestGenerator';
 import { ResponseValidator } from './validator/ResponseValidator';
 import { Reporter } from './reporter/Reporter';
@@ -289,7 +289,7 @@ async function runTests() {
 /**
  * Create a test configuration from the full config
  */
-function createTestConfig(fullConfig: any): TesterConfig {
+function createTestConfig(fullConfig: CompleteConfig): TesterConfig {
   return {
     servers: fullConfig.servers,
     numTestsPerTool: fullConfig.numTestsPerTool || DEFAULT_CONFIG.numTestsPerTool,
