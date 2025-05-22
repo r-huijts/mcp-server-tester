@@ -1,6 +1,5 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { ChildProcess } from 'child_process';
 import { ConfigLoader } from './ConfigLoader';
 import { ToolResponse } from '../types';
 
