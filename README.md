@@ -6,16 +6,15 @@ A powerful, configuration-driven testing tool for Model Context Protocol (MCP) s
 
 ## Current Status
 
-This tool is in early development stage with:
-- ✅ Basic configuration framework implemented
-- ✅ MCP server connection capabilities
+This tool is moving toward an alpha release and currently offers:
+- ✅ Basic configuration framework
+- ✅ MCP server connection and CLI support
 - ✅ Test generation using Claude AI
 - ✅ Natural language query generation for tests
-- ✅ Report generation in multiple formats
-- 🚧 Comprehensive test validation (in progress)
-- 🚧 Additional reporting options (in progress)
-- ❌ Full test coverage of the tool itself
-- ❌ Production hardening
+- ✅ Comprehensive response validation with multiple rules
+- ✅ Report generation in console, JSON, HTML, and Markdown formats
+- 🚧 Broader automated test coverage of the tester
+- 🚧 Production hardening and packaging improvements
 
 If you're interested in contributing, please feel free to open issues and submit pull requests.
 
@@ -229,6 +228,11 @@ For security reasons, your Anthropic API key should only be set in one of these 
    ```
    ANTHROPIC_API_KEY=your-api-key
    ```
+3. Optionally set the Claude model:
+   ```
+   CLAUDE_MODEL=claude-3-opus
+   ```
+   If not provided, the tool defaults to `claude-3-7-sonnet-20250219`.
 
 **Important**: Never put your API key in the configuration file, as it may be committed to version control.
 
@@ -438,6 +442,8 @@ cd mcp-server-tester
 npm install
 # Run the Jest test suite
 npm test
+# Lint the code for style issues
+npm run lint
 
 # Create your .env file
 cp .env.example .env
