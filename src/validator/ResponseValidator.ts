@@ -167,8 +167,9 @@ export class ResponseValidator implements ResponseValidatorInterface {
    */
   private validateHasProperty(data: any, target: string): boolean {
     if (!target) return false;
-    
-    const parts = target.split('.');
+
+    const normalized = target.replace(/\[(\w+)\]/g, '.$1');
+    const parts = normalized.split('.');
     let current = data;
     
     for (const part of parts) {

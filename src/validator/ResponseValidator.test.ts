@@ -146,4 +146,28 @@ describe('ResponseValidator', () => {
     expect(result.valid).toBe(false);
     expect(result.errors).toContain('custom failed');
   });
+
+  test('validate hasProperty with bracket path', () => {
+    const testCase: TestCase = {
+      id: '5',
+      toolName: 'test',
+      description: 'desc',
+      naturalLanguageQuery: '',
+      inputs: {},
+      expectedOutcome: {
+        status: 'success',
+        validationRules: [
+          { type: 'hasProperty', target: 'items[0].id', message: 'missing id' }
+        ]
+      }
+    };
+
+    const response: ToolResponse = {
+      status: 'success',
+      data: { items: [{ id: 1 }, { id: 2 }] }
+    };
+
+    const result = validator.validateResponse(response, testCase);
+    expect(result.valid).toBe(true);
+  });
 });
