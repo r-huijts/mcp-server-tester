@@ -56,7 +56,7 @@ export interface TesterConfig {
   servers?: string[];         // Optional: specific servers to test (if not specified, all servers in mcpServers will be tested)
   numTestsPerTool: number;
   timeoutMs: number;
-  outputFormat: 'json' | 'console' | 'html';
+  outputFormat: 'json' | 'console' | 'html' | 'markdown';
   outputPath?: string;
   anthropicApiKey?: string;
   verbose: boolean;

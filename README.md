@@ -47,7 +47,7 @@ This tool is designed for MCP server developers, AI integration teams, and quali
 - **Multiple Server Support**: Test multiple MCP servers at once
 - **Comprehensive Testing**: Tests all tools exposed by each server
 - **Natural Language Context**: Includes the user query that would trigger each tool, providing real-world context
-- **Detailed Reports**: Generate reports in console, JSON, or HTML formats
+- **Detailed Reports**: Generate reports in console, JSON, HTML, or Markdown formats
 - **Secure**: Keeps API keys in environment variables, not in configuration files
 
 ## Prerequisites
@@ -155,7 +155,7 @@ By default, the tool will test all servers defined in the `mcpServers` section. 
 | `servers` | Optional array of specific server names to test | All servers in `mcpServers` |
 | `numTestsPerTool` | Number of tests to generate per tool | 3 |
 | `timeoutMs` | Timeout for test execution in milliseconds | 10000 |
-| `outputFormat` | Format for test reports (`json`, `console`, `html`) | "console" |
+| `outputFormat` | Format for test reports (`json`, `console`, `html`, `markdown`) | "console" |
 | `outputPath` | Path to output file | undefined |
 | `verbose` | Enable verbose logging | false |
 
@@ -303,6 +303,10 @@ Creates a structured JSON file at the path specified in `outputPath`.
 ### HTML Report
 
 Generates an HTML report with visualizations at the path specified in `outputPath`.
+
+### Markdown Report
+
+Creates a portable Markdown file at the path specified in `outputPath`.
 
 ## Complete Examples
 

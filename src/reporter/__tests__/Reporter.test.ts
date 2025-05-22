@@ -64,4 +64,22 @@ describe('Reporter', () => {
     expect(html).toContain('<html>');
     expect(html).toContain('MCP Server Test Report');
   });
+
+  test('creates Markdown report', async () => {
+    const reporter = new Reporter();
+    const results = [createTestResult(true)];
+    const config: TesterConfig = {
+      numTestsPerTool: 1,
+      timeoutMs: 100,
+      outputFormat: 'markdown',
+      outputPath: path.join(tmpDir, 'report.md'),
+      verbose: false
+    };
+
+    await reporter.generateReport(results, config);
+
+    expect(fs.existsSync(config.outputPath!)).toBe(true);
+    const md = fs.readFileSync(config.outputPath!, 'utf8');
+    expect(md).toContain('# MCP Server Test Report');
+  });
 });

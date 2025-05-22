@@ -4,7 +4,7 @@
 - **Automated Test Generation**: Creates test cases for each tool based on its schema and specification.
 - **Customizable Testing**: Configure the number of tests per tool, timeouts, and other parameters.
 - **Comprehensive Validation**: Validates responses against generated expectations and rules.
-- **Detailed Reporting**: Provides detailed reports in multiple formats (console, JSON, HTML).
+- **Detailed Reporting**: Provides detailed reports in multiple formats (console, JSON, HTML, Markdown).
 
 ## Test Reports
 
@@ -19,4 +19,5 @@ Test reports include:
 Reports can be generated in multiple formats:
 - Console (default)
 - JSON
-- HTML 
+- HTML
+- Markdown
