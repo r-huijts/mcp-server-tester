@@ -434,8 +434,10 @@ To set up the development environment:
 git clone https://github.com/r-huijts/mcp-server-tester.git
 cd mcp-server-tester
 
-# Install dependencies
+# Install dependencies (including dev dependencies)
 npm install
+# Run the Jest test suite
+npm test
 
 # Create your .env file
 cp .env.example .env
