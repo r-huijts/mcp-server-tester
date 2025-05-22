@@ -47,7 +47,7 @@ Examples:
   # Use custom config file
   mcp-server-tester ./configs/my-mcp-config.json
 
-Learn more: https://github.com/username/mcp-server-tester
+  Learn more: https://github.com/r-huijts/mcp-server-tester
 `);
 }
 
