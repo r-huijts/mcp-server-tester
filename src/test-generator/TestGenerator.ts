@@ -1,4 +1,5 @@
 import { Anthropic } from '@anthropic-ai/sdk';
+import { Claude } from '../llm/Claude';
 import { v4 as uuidv4 } from 'uuid';
 import { 
   TestGeneratorInterface,
@@ -12,6 +13,7 @@ import {
  */
 export class TestGenerator implements TestGeneratorInterface {
   private anthropic: Anthropic;
+  private claude: Claude;
   private model: string = process.env.CLAUDE_MODEL || 'claude-3-7-sonnet-20250219';
 
   /**
@@ -20,6 +22,7 @@ export class TestGenerator implements TestGeneratorInterface {
    */
   constructor(apiKey: string) {
     this.anthropic = new Anthropic({ apiKey });
+    this.claude = new Claude(apiKey);
   }
 
   /**
@@ -44,6 +47,17 @@ export class TestGenerator implements TestGeneratorInterface {
         });
 
         const testCases = this.parseResponse(response.completion, tool.name);
+
+        // Populate natural language query for each test case
+        for (const testCase of testCases) {
+          try {
+            testCase.naturalLanguageQuery = await this.claude.generateNaturalLanguageQuery(tool);
+          } catch (err) {
+            console.error(`Failed to generate natural language query for ${tool.name}:`, err);
+            testCase.naturalLanguageQuery = '';
+          }
+        }
+
         allTests.push(...testCases);
         
         console.log(`Generated ${testCases.length} tests for ${tool.name}`);
@@ -194,7 +208,7 @@ Please return ONLY the JSON array of test cases, nothing else.
           id: uuidv4(),
           toolName,
           description: test.description,
-          naturalLanguageQuery: '', // Placeholder until LLM generates this
+          naturalLanguageQuery: test.naturalLanguageQuery || '',
           inputs: test.inputs,
           expectedOutcome: {
             status: test.expectedOutcome.status,
