@@ -241,7 +241,10 @@ MCP Server Tester supports minimal command-line options:
 | `--init` or `-i` | Create a default configuration file |
 | `--list` or `-l` | List all servers defined in your configuration |
 | `--help` or `-h` | Display help information |
+| `--servers` or `-s` | Comma-separated list of servers to test |
 | `[config-path]` | Specify a custom configuration file path |
+
+The `--servers` option overrides the `servers` array in your configuration file.
 
 ## Test Generation Process
 

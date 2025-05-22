@@ -76,7 +76,7 @@ function printServerList(configLoader: ConfigLoader) {
  */
 async function runTests() {
   let client: MCPClient | null = null;
-  
+
   try {
     // Handle help flag
     if (process.argv.includes('--help') || process.argv.includes('-h')) {
@@ -106,10 +106,28 @@ async function runTests() {
       return;
     }
     
-    // Get config path from arguments or use default
-    const configPath = process.argv.length > 2 && !process.argv[2].startsWith('-') 
-      ? process.argv[2]
-      : path.join(process.cwd(), DEFAULT_CONFIG_FILENAME);
+    // Parse command line arguments
+    let configPath: string | undefined;
+    let cliServers: string[] | undefined;
+    for (let i = 2; i < process.argv.length; i++) {
+      const arg = process.argv[i];
+      if (arg === '--servers' || arg === '-s') {
+        const list = process.argv[i + 1];
+        if (list) {
+          cliServers = list.split(',').map(s => s.trim()).filter(Boolean);
+          i++;
+        }
+      } else if (arg.startsWith('--servers=')) {
+        const list = arg.slice('--servers='.length);
+        cliServers = list.split(',').map(s => s.trim()).filter(Boolean);
+      } else if (arg.startsWith('-s=')) {
+        const list = arg.slice(3);
+        cliServers = list.split(',').map(s => s.trim()).filter(Boolean);
+      } else if (!arg.startsWith('-') && !configPath) {
+        configPath = arg;
+      }
+    }
+    configPath = configPath || path.join(process.cwd(), DEFAULT_CONFIG_FILENAME);
     
     // Check if config file exists
     if (!fs.existsSync(configPath)) {
@@ -128,6 +146,11 @@ async function runTests() {
     
     // Load test configuration from the full config
     const testConfig = createTestConfig(fullConfig);
+
+    // Override servers from CLI if provided
+    if (cliServers && cliServers.length > 0) {
+      testConfig.servers = cliServers;
+    }
     
     // Check for API key in environment variable or .env file only
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -300,8 +323,12 @@ function createTestConfig(fullConfig: CompleteConfig): TesterConfig {
   };
 }
 
-// Run the tests
-runTests().catch(error => {
-  console.error('Unhandled error:', error instanceof Error ? error.message : String(error));
-  process.exit(1);
-}); 
+export { runTests };
+
+// Run the tests when executed directly
+if (require.main === module) {
+  runTests().catch(error => {
+    console.error('Unhandled error:', error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  });
+}
