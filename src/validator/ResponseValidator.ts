@@ -17,23 +17,37 @@ export class ResponseValidator implements ResponseValidatorInterface {
    */
   validateResponse(response: ToolResponse, testCase: TestCase): ValidationResult {
     const errors: string[] = [];
-    
-    // Check basic status
-    if (response.status === 'error') {
-      errors.push(`Tool execution failed: ${response.error?.message || 'Unknown error'}`);
-      return { valid: false, errors };
-    }
-    
-    // Validate the content using the validation rules
-    if (testCase.validationRules && testCase.validationRules.length > 0) {
-      const validationErrors = this.validateRules(response.data, testCase.validationRules);
-      if (validationErrors.length > 0) {
-        errors.push(...validationErrors);
+
+    const expectedStatus = testCase.expectedOutcome.status;
+
+    if (expectedStatus === 'success') {
+      if (response.status === 'error') {
+        errors.push(`Tool execution failed: ${response.error?.message || 'Unknown error'}`);
+        return { valid: false, errors };
+      }
+
+      const rules = testCase.expectedOutcome.validationRules || [];
+      if (rules.length > 0) {
+        const validationErrors = this.validateRules(response.data, rules);
+        if (validationErrors.length > 0) {
+          errors.push(...validationErrors);
+        }
+      } else {
+        if (!response.data) {
+          errors.push('No data in response');
+        }
       }
     } else {
-      // If no validation rules are specified, just check that we have data
-      if (!response.data) {
-        errors.push('No data in response');
+      // expected error
+      if (response.status !== 'error') {
+        errors.push('Expected tool to return an error');
+      }
+      const rules = testCase.expectedOutcome.validationRules || [];
+      if (rules.length > 0) {
+        const validationErrors = this.validateRules(response, rules);
+        if (validationErrors.length > 0) {
+          errors.push(...validationErrors);
+        }
       }
     }
     
