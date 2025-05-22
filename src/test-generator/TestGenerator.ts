@@ -12,7 +12,6 @@ import {
  */
 export class TestGenerator implements TestGeneratorInterface {
   private anthropic: Anthropic;
-  private model: string = process.env.CLAUDE_MODEL || 'claude-3-7-sonnet-20250219';
 
   /**
    * Create a new test generator
@@ -30,6 +29,8 @@ export class TestGenerator implements TestGeneratorInterface {
   async generateTests(tools: ToolDefinition[], config: TesterConfig): Promise<TestCase[]> {
     const allTests: TestCase[] = [];
     const testsPerTool = config.numTestsPerTool || 3;
+    const currentModel = config.modelName || process.env.CLAUDE_MODEL || 'claude-3-7-sonnet-20250219';
+    const currentTemperature = config.temperature !== undefined ? config.temperature : 0.7;
 
     for (const tool of tools) {
       try {
@@ -37,13 +38,13 @@ export class TestGenerator implements TestGeneratorInterface {
         const prompt = this.createPrompt(tool, testsPerTool);
         
         const response = await this.anthropic.completions.create({
-          model: this.model,
+          model: currentModel,
           max_tokens_to_sample: 4000,
           prompt: `\n\nHuman: ${prompt}\n\nAssistant:`,
-          temperature: 0.7
+          temperature: currentTemperature
         });
 
-        const testCases = this.parseResponse(response.completion, tool.name);
+        const testCases = this.parseResponse(response.completion, tool);
         allTests.push(...testCases);
         
         console.log(`Generated ${testCases.length} tests for ${tool.name}`);
@@ -127,9 +128,9 @@ Please return ONLY the JSON array of test cases, nothing else.
   /**
    * Parse Claude's response into test cases
    * @param responseText Claude's response text
-   * @param toolName Name of the tool being tested
+   * @param tool ToolDefinition object
    */
-  parseResponse(responseText: string, toolName: string): TestCase[] {
+  parseResponse(responseText: string, tool: ToolDefinition): TestCase[] {
     let jsonContent = responseText;
     try {
       // Extract JSON content between backticks if present
@@ -139,25 +140,25 @@ Please return ONLY the JSON array of test cases, nothing else.
       } else {
         // Attempt to gracefully handle cases where the LLM might forget the backticks but still returns valid JSON.
         // If it's not actually JSON, the JSON.parse below will catch it.
-        console.warn(`[${toolName}] LLM response did not contain JSON within backticks. Attempting to parse directly.`);
+        console.warn(`[${tool.name}] LLM response did not contain JSON within backticks. Attempting to parse directly.`);
       }
       
       let parsedJson: any;
       try {
         parsedJson = JSON.parse(jsonContent);
       } catch (parseError: any) {
-        console.error(`[${toolName}] Failed to parse JSON from LLM response. Error: ${parseError.message}`);
-        console.error(`[${toolName}] Raw response text was: ${responseText}`);
+        console.error(`[${tool.name}] Failed to parse JSON from LLM response. Error: ${parseError.message}`);
+        console.error(`[${tool.name}] Raw response text was: ${responseText}`);
         return []; // Return empty if JSON parsing fails
       }
 
       // Ensure parsedJson is an array
       if (!Array.isArray(parsedJson)) {
-        console.warn(`[${toolName}] Parsed JSON is not an array. LLM response might be malformed. Raw response: ${responseText}`);
+        console.warn(`[${tool.name}] Parsed JSON is not an array. LLM response might be malformed. Raw response: ${responseText}`);
         // If it's a single object that looks like a test case, wrap it in an array.
         // This is a common LLM mistake.
         if (parsedJson && typeof parsedJson === 'object' && parsedJson.description && parsedJson.inputs && parsedJson.expectedOutcome) {
-          console.warn(`[${toolName}] Attempting to recover by wrapping single test case object in an array.`);
+          console.warn(`[${tool.name}] Attempting to recover by wrapping single test case object in an array.`);
           parsedJson = [parsedJson];
         } else {
           return [];
@@ -168,47 +169,123 @@ Please return ONLY the JSON array of test cases, nothing else.
       parsedJson.forEach((test: any, index: number) => {
         // Basic validation for essential fields
         if (!test || typeof test !== 'object') {
-          console.warn(`[${toolName}] Test case at index ${index} is not a valid object. Skipping.`);
+          console.warn(`[${tool.name}] Test case at index ${index} is not a valid object. Skipping.`);
           return;
         }
         if (!test.description || typeof test.description !== 'string') {
-          console.warn(`[${toolName}] Test case at index ${index} is missing or has an invalid 'description'. Skipping: ${JSON.stringify(test)}`);
+          console.warn(`[${tool.name}] Test case at index ${index} is missing or has an invalid 'description'. Skipping: ${JSON.stringify(test)}`);
           return;
         }
         if (!test.inputs || typeof test.inputs !== 'object') {
-          // Allow for null inputs if that's a valid test case (e.g. a tool that takes no inputs)
-          // However, the prompt asks for an inputs object, so null/undefined is more likely an LLM error.
-          console.warn(`[${toolName}] Test case "${test.description}" is missing or has invalid 'inputs'. Skipping: ${JSON.stringify(test)}`);
+          console.warn(`[${tool.name}] Test case "${test.description}" is missing or has invalid 'inputs'. Skipping: ${JSON.stringify(test)}`);
           return;
         }
         if (!test.expectedOutcome || typeof test.expectedOutcome !== 'object') {
-          console.warn(`[${toolName}] Test case "${test.description}" is missing or has invalid 'expectedOutcome'. Skipping: ${JSON.stringify(test)}`);
+          console.warn(`[${tool.name}] Test case "${test.description}" is missing or has invalid 'expectedOutcome'. Skipping: ${JSON.stringify(test)}`);
           return;
         }
         if (!test.expectedOutcome.status || (test.expectedOutcome.status !== 'success' && test.expectedOutcome.status !== 'error')) {
-          console.warn(`[${toolName}] Test case "${test.description}" has missing or invalid 'expectedOutcome.status'. Skipping: ${JSON.stringify(test)}`);
+          console.warn(`[${tool.name}] Test case "${test.description}" has missing or invalid 'expectedOutcome.status'. Skipping: ${JSON.stringify(test)}`);
           return;
         }
 
-        validTestCases.push({
+        const newTestCase: TestCase = {
           id: uuidv4(),
-          toolName,
+          toolName: tool.name,
           description: test.description,
           naturalLanguageQuery: '', // Placeholder until LLM generates this
           inputs: test.inputs,
           expectedOutcome: {
             status: test.expectedOutcome.status,
-            // Ensure validationRules is always an array, even if missing or null from LLM
             validationRules: Array.isArray(test.expectedOutcome.validationRules) ? test.expectedOutcome.validationRules : []
           }
-        });
+          // warnings will be added below if applicable
+        };
+
+        if (newTestCase.expectedOutcome.status === 'success') {
+          const validationResult = this.validateTestInputs(newTestCase, tool);
+          if (validationResult.warnings && validationResult.warnings.length > 0) {
+            newTestCase.warnings = validationResult.warnings;
+          }
+        }
+        validTestCases.push(newTestCase);
       });
       
       return validTestCases;
     } catch (error: any) { // Catch any other unexpected errors during processing
-      console.error(`[${toolName}] Unexpected error in parseResponse: ${error.message}`);
-      console.error(`[${toolName}] Response text was: ${responseText}`);
+      console.error(`[${tool.name}] Unexpected error in parseResponse: ${error.message}`);
+      console.error(`[${tool.name}] Response text was: ${responseText}`);
       return [];
     }
+  }
+
+  private validateTestInputs(testCase: TestCase, tool: ToolDefinition): { isValid: boolean; warnings: string[] } {
+    const warnings: string[] = [];
+    let isValid = true;
+
+    if (!tool.inputSchema || !tool.inputSchema.properties) {
+      // No schema to validate against, so consider it valid but maybe log a different kind of warning elsewhere if schema is expected.
+      return { isValid: true, warnings: [] };
+    }
+
+    const schemaProperties = tool.inputSchema.properties;
+    const requiredParameters: string[] = tool.inputSchema.required || [];
+
+    // Check for missing required parameters
+    for (const requiredParam of requiredParameters) {
+      if (!(requiredParam in testCase.inputs)) {
+        isValid = false;
+        warnings.push(`Missing required input parameter: '${requiredParam}'.`);
+      }
+    }
+
+    // Validate provided inputs
+    for (const inputName in testCase.inputs) {
+      const inputValue = testCase.inputs[inputName];
+      const schemaProperty = schemaProperties[inputName];
+
+      if (!schemaProperty) {
+        warnings.push(`Input parameter '${inputName}' is not defined in the tool's input schema.`);
+        // isValid might be set to false or this could just be a warning, depending on strictness.
+        // For now, let's consider it just a warning if it's an extra parameter.
+        continue;
+      }
+
+      const expectedType = schemaProperty.type;
+      const actualType = typeof inputValue;
+
+      // Type Checking
+      if (expectedType === 'string' && actualType !== 'string') {
+        isValid = false;
+        warnings.push(`Input '${inputName}' type mismatch: Expected string, got ${actualType}.`);
+      } else if (expectedType === 'number' && actualType !== 'number') {
+        isValid = false;
+        warnings.push(`Input '${inputName}' type mismatch: Expected number, got ${actualType}.`);
+      } else if (expectedType === 'boolean' && actualType !== 'boolean') {
+        isValid = false;
+        warnings.push(`Input '${inputName}' type mismatch: Expected boolean, got ${actualType}.`);
+      } else if (expectedType === 'object') {
+        if (actualType !== 'object' || Array.isArray(inputValue)) {
+          isValid = false;
+          warnings.push(`Input '${inputName}' type mismatch: Expected object, got ${Array.isArray(inputValue) ? 'array' : actualType}.`);
+        }
+      } else if (expectedType === 'array') {
+        if (!Array.isArray(inputValue)) {
+          isValid = false;
+          warnings.push(`Input '${inputName}' type mismatch: Expected array, got ${actualType}.`);
+        }
+      }
+      // Note: This doesn't recursively validate items in arrays or properties of objects yet.
+
+      // Enum Checking
+      if (schemaProperty.enum && Array.isArray(schemaProperty.enum)) {
+        if (!schemaProperty.enum.includes(inputValue)) {
+          isValid = false;
+          warnings.push(`Input '${inputName}' value '${inputValue}' is not in the allowed enum values: [${schemaProperty.enum.join(', ')}].`);
+        }
+      }
+    }
+
+    return { isValid, warnings };
   }
 } 

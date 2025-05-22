@@ -11,6 +11,7 @@ export interface TestCase {
     status: 'success' | 'error';
     validationRules?: ValidationRule[];
   };
+  warnings?: string[]; // New field
 }
 
 /**
@@ -54,6 +55,8 @@ export interface TesterConfig {
   outputPath?: string;
   anthropicApiKey?: string;
   verbose: boolean;
+  modelName?: string;
+  temperature?: number;
 }
 
 /**
@@ -75,6 +78,7 @@ export interface ToolDefinition {
   inputSchema: {
     type: "object";
     properties?: Record<string, any>;
+    required?: string[]; // Add this line
   };
 }
 
