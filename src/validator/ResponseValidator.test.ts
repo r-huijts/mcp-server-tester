@@ -116,4 +116,34 @@ describe('ResponseValidator', () => {
     const result = validator.validateResponse(response, testCase);
     expect(result.valid).toBe(true);
   });
+
+  test('executes custom validation rule and handles its result', () => {
+    const customFn = jest.fn().mockReturnValueOnce(true).mockReturnValueOnce(false);
+
+    const baseTestCase: TestCase = {
+      id: '4',
+      toolName: 'test',
+      description: 'desc',
+      naturalLanguageQuery: '',
+      inputs: {},
+      expectedOutcome: {
+        status: 'success',
+        validationRules: [
+          { type: 'custom', custom: customFn, message: 'custom failed' }
+        ]
+      }
+    };
+
+    const response: ToolResponse = { status: 'success', data: { foo: 'bar' } };
+
+    // First run: custom rule returns true
+    let result = validator.validateResponse(response, baseTestCase);
+    expect(customFn).toHaveBeenCalledWith(response.data);
+    expect(result.valid).toBe(true);
+
+    // Second run: custom rule returns false
+    result = validator.validateResponse(response, baseTestCase);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('custom failed');
+  });
 });
