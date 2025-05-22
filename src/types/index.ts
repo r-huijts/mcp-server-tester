@@ -88,7 +88,7 @@ export interface ToolDefinition {
  * Wrapper for accessing MCP server tools
  */
 export interface MCPClientInterface {
-  connect(serverPath: string): Promise<void>;
+  connect(serverPathOrName: string, configPath?: string): Promise<void>;
   listTools(): Promise<ToolDefinition[]>;
   executeTool(name: string, params: Record<string, any>): Promise<ToolResponse>;
   disconnect(): Promise<void>;
