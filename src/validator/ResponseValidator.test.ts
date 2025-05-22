@@ -76,4 +76,44 @@ describe('ResponseValidator', () => {
     expect(result.valid).toBe(false);
     expect(result.errors[0]).toMatch('Expected tool to return an error');
   });
+
+  test('validates equals rule', () => {
+    const testCase: TestCase = {
+      id: '2',
+      toolName: 'test',
+      description: 'desc',
+      naturalLanguageQuery: '',
+      inputs: {},
+      expectedOutcome: {
+        status: 'success',
+        validationRules: [
+          { type: 'equals', target: 'foo', value: 42, message: 'foo should equal 42' }
+        ]
+      }
+    };
+
+    const response: ToolResponse = { status: 'success', data: { foo: 42 } };
+    const result = validator.validateResponse(response, testCase);
+    expect(result.valid).toBe(true);
+  });
+
+  test('validates arrayLength rule', () => {
+    const testCase: TestCase = {
+      id: '3',
+      toolName: 'test',
+      description: 'desc',
+      naturalLanguageQuery: '',
+      inputs: {},
+      expectedOutcome: {
+        status: 'success',
+        validationRules: [
+          { type: 'arrayLength', target: 'items', value: 3, message: 'items length should be 3' }
+        ]
+      }
+    };
+
+    const response: ToolResponse = { status: 'success', data: { items: [1, 2, 3] } };
+    const result = validator.validateResponse(response, testCase);
+    expect(result.valid).toBe(true);
+  });
 });

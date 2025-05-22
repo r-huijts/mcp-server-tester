@@ -17,7 +17,13 @@ export interface TestCase {
  * Rules for validating the content of a tool response
  */
 export interface ValidationRule {
-  type: 'contains' | 'matches' | 'hasProperty' | 'custom';
+  type:
+    | 'contains'
+    | 'matches'
+    | 'hasProperty'
+    | 'equals'
+    | 'arrayLength'
+    | 'custom';
   target?: string;
   value?: any;
   custom?: (response: any) => boolean;
