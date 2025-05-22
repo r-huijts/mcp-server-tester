@@ -167,26 +167,26 @@ export class ResponseValidator implements ResponseValidatorInterface {
    */
   private validateHasProperty(data: any, target: string): boolean {
     if (!target) return false;
-    
-    const parts = target.split('.');
+
+    const parts = this.parsePath(target);
     let current = data;
-    
+
     for (const part of parts) {
       if (current === null || current === undefined) {
         return false;
       }
-      
+
       if (typeof current !== 'object') {
         return false;
       }
-      
+
       if (!(part in current)) {
         return false;
       }
-      
-      current = current[part];
+
+      current = (current as any)[part];
     }
-    
+
     return true;
   }
 
@@ -215,22 +215,32 @@ export class ResponseValidator implements ResponseValidatorInterface {
    */
   private getValueByPath(data: any, path?: string): any {
     if (!path) return data;
-    
-    const parts = path.split('.');
+
+    const parts = this.parsePath(path);
     let current = data;
-    
+
     for (const part of parts) {
       if (current === null || current === undefined) {
         return undefined;
       }
-      
+
       if (typeof current !== 'object') {
         return undefined;
       }
-      
-      current = current[part];
+
+      current = (current as any)[part];
     }
-    
+
     return current;
+  }
+
+  /**
+   * Convert a path with optional bracket notation to an array of parts
+   */
+  private parsePath(path: string): Array<string | number> {
+    return path
+      .replace(/\[(\w+)\]/g, '.$1')
+      .split('.')
+      .filter(p => p !== '');
   }
 } 
