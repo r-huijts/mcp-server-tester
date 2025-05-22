@@ -426,6 +426,12 @@ cp .env.example .env
 npm run dev
 ```
 
+### Code Structure
+
+The canonical test generator lives at `src/test-generator/TestGenerator.ts`.
+Older files such as `src/generator/TestGenerator.ts` have been removed to avoid
+confusion. All imports should reference the module under `src/test-generator/`.
+
 ## License
 
 MIT 
