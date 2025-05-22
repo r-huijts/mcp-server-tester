@@ -1,6 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { ChildProcess, spawn } from 'child_process';
+import { ChildProcess } from 'child_process';
 import { ConfigLoader } from './ConfigLoader';
 import { ToolResponse } from '../types';
 
@@ -9,7 +9,6 @@ import { ToolResponse } from '../types';
  */
 export class MCPClient {
   private client: Client | null = null;
-  private serverProcess: ChildProcess | null = null;
   private configLoader: ConfigLoader = new ConfigLoader();
   
   /**
@@ -31,28 +30,15 @@ export class MCPClient {
       // This is a configured server, spawn it
       console.log(`Starting server process: ${serverConfig.command} ${serverConfig.args.join(' ')}`);
       
-      // Set up environment variables
-      const env = {
-        ...process.env,
-        ...serverConfig.env
-      };
-      
-      this.serverProcess = spawn(serverConfig.command, serverConfig.args, { 
-        env,
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-      
-      // Handle stderr output
-      if (this.serverProcess.stderr) {
-        this.serverProcess.stderr.on('data', (data: Buffer) => {
-          console.error(`Server stderr: ${data.toString()}`);
-        });
-      }
-      
-      // Create transport using the command
+      // Create transport using the command. StdioClientTransport internally
+      // spawns the server process.
       const transport = new StdioClientTransport({
         command: serverConfig.command,
-        args: serverConfig.args
+        args: serverConfig.args,
+        env: {
+          ...process.env,
+          ...serverConfig.env
+        }
       });
       
       // Create client
@@ -127,12 +113,6 @@ export class MCPClient {
    * Disconnect from the server
    */
   async disconnect(): Promise<void> {
-    if (this.serverProcess) {
-      console.log('Stopping server process...');
-      this.serverProcess.kill();
-      this.serverProcess = null;
-    }
-    
     this.client = null;
   }
   
