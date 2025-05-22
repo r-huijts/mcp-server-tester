@@ -25,6 +25,9 @@ export class Reporter implements ReporterInterface {
       case 'html':
         await this.generateHtmlReport(results, config);
         break;
+      case 'markdown':
+        await this.generateMarkdownReport(results, config);
+        break;
       case 'console':
       default:
         this.generateConsoleReport(results);
@@ -257,6 +260,69 @@ export class Reporter implements ReporterInterface {
     fs.writeFileSync(outputPath, html);
     console.log(`HTML report written to: ${outputPath}`);
   }
+
+  /**
+   * Generate a Markdown report
+   * @param results Test results to report
+   */
+  private async generateMarkdownReport(results: TestResult[], config: TesterConfig): Promise<void> {
+    const outputPath = config.outputPath || 'mcp-test-report.md';
+
+    const totalTests = results.length;
+    const passedTests = results.filter(r => r.passed).length;
+    const failedTests = totalTests - passedTests;
+    const passRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+
+    const groupedByTool: Record<string, TestResult[]> = {};
+    for (const result of results) {
+      const { toolName } = result.testCase;
+      if (!groupedByTool[toolName]) {
+        groupedByTool[toolName] = [];
+      }
+      groupedByTool[toolName].push(result);
+    }
+
+    let md = `# MCP Server Test Report\n\n`;
+    md += `Generated on: ${new Date().toLocaleString()}\n\n`;
+    md += `## Summary\n`;
+    md += `- Total Tests: ${totalTests}\n`;
+    md += `- Passed: ${passedTests}\n`;
+    md += `- Failed: ${failedTests}\n`;
+    md += `- Pass Rate: ${passRate}%\n\n`;
+
+    for (const [toolName, toolResults] of Object.entries(groupedByTool)) {
+      const toolPassRate = Math.round((toolResults.filter(r => r.passed).length / toolResults.length) * 100);
+      md += `### Tool: ${toolName} (${toolPassRate}% pass)\n`;
+
+      for (const result of toolResults) {
+        const { id, description, naturalLanguageQuery, inputs } = result.testCase;
+        const status = result.passed ? 'PASS' : 'FAIL';
+        const executionTime = result.executionTime ? `${result.executionTime}ms` : 'N/A';
+
+        md += `\n- **${status}** ${description} (ID: ${id}, Time: ${executionTime})\n`;
+        md += `  - Query: \`${this.escapeMarkdown(naturalLanguageQuery)}\`\n`;
+        md += `  - Inputs:\n\n    \`\`\`json\n${JSON.stringify(inputs, null, 2)}\n\`\`\`\n`;
+
+        if (result.response) {
+          md += `  - Response:\n\n    \`\`\`json\n${JSON.stringify(result.response, null, 2)}\n\`\`\`\n`;
+        }
+
+        if (!result.passed && result.validationErrors) {
+          md += `  - Validation Errors:\n\n    \`\`\`\n${this.escapeMarkdown(result.validationErrors.join('\n'))}\n\`\`\`\n`;
+        }
+      }
+
+      md += `\n`;
+    }
+
+    const dir = path.dirname(outputPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    fs.writeFileSync(outputPath, md);
+    console.log(`Markdown report written to: ${outputPath}`);
+  }
   
   private escapeHtml(text: string): string {
     return text
@@ -266,4 +332,8 @@ export class Reporter implements ReporterInterface {
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
   }
-} 
+
+  private escapeMarkdown(text: string): string {
+    return text.replace(/`/g, '\\`');
+  }
+}
