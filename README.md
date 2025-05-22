@@ -446,4 +446,4 @@ confusion. All imports should reference the module under `src/test-generator/`.
 
 ## License
 
-MIT 
+This project is licensed under the [MIT](LICENSE) license.
