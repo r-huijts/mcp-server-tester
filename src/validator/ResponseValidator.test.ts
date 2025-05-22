@@ -114,8 +114,31 @@ describe('ResponseValidator', () => {
 
     const response: ToolResponse = { status: 'success', data: { items: [1, 2, 3] } };
     const result = validator.validateResponse(response, testCase);
-    expect(result.valid).toBe(true);
-  });
+      expect(result.valid).toBe(true);
+    });
+
+    test('validates hasProperty rule with array index path', () => {
+      const testCase: TestCase = {
+        id: '5',
+        toolName: 'test',
+        description: 'desc',
+        naturalLanguageQuery: '',
+        inputs: {},
+        expectedOutcome: {
+          status: 'success',
+          validationRules: [
+            { type: 'hasProperty', target: 'items[1].name', message: 'missing' }
+          ]
+        }
+      };
+
+      const response: ToolResponse = {
+        status: 'success',
+        data: { items: [{ name: 'first' }, { name: 'second' }] }
+      };
+      const result = validator.validateResponse(response, testCase);
+      expect(result.valid).toBe(true);
+    });
 
   test('executes custom validation rule and handles its result', () => {
     const customFn = jest.fn().mockReturnValueOnce(true).mockReturnValueOnce(false);
