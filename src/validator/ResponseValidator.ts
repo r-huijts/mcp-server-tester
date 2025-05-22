@@ -85,7 +85,19 @@ export class ResponseValidator implements ResponseValidatorInterface {
             errors.push(rule.message);
           }
           break;
-          
+
+        case 'equals':
+          if (!this.validateEquals(data, rule.target, rule.value)) {
+            errors.push(rule.message);
+          }
+          break;
+
+        case 'arrayLength':
+          if (!this.validateArrayLength(data, rule.target, rule.value)) {
+            errors.push(rule.message);
+          }
+          break;
+
         case 'custom':
           if (rule.custom && !rule.custom(data)) {
             errors.push(rule.message);
@@ -176,6 +188,23 @@ export class ResponseValidator implements ResponseValidatorInterface {
     }
     
     return true;
+  }
+
+  /**
+   * Validate that a value equals the expected value
+   */
+  private validateEquals(data: any, target: string, value: any): boolean {
+    const targetValue = this.getValueByPath(data, target);
+    return JSON.stringify(targetValue) === JSON.stringify(value);
+  }
+
+  /**
+   * Validate that an array has the expected length
+   */
+  private validateArrayLength(data: any, target: string, value: number): boolean {
+    const targetValue = this.getValueByPath(data, target);
+    if (!Array.isArray(targetValue)) return false;
+    return targetValue.length === value;
   }
   
   /**

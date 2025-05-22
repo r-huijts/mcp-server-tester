@@ -262,6 +262,18 @@ Each test case includes:
 - Input parameters
 - Expected outcome criteria
 
+### Validation Rule Types
+
+Validation rules are used to check the structure and content of a tool response.
+The following rule types are supported:
+
+- `contains` – ensure a string or array contains a given value
+- `matches` – check equality or a regular expression match
+- `hasProperty` – verify that a property exists
+- `equals` – assert that a value exactly matches the expected value
+- `arrayLength` – require an array to have a specific length
+- `custom` – invoke a user-defined validation function
+
 ## Test Execution and Validation
 
 For each server specified in the configuration (or all servers if none specified):
