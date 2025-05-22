@@ -28,6 +28,7 @@ The Model Context Protocol (MCP) enables AI models to access external tools and 
 - **Providing detailed reports** to identify issues and performance bottlenecks
 
 This tool is designed for MCP server developers, AI integration teams, and quality assurance professionals who need to ensure their MCP implementations are robust, reliable, and correctly follow the protocol specifications.
+For a step-by-step user guide see [docs/USER_MANUAL.md](docs/USER_MANUAL.md).
 
 ## Repository
 
