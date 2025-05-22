@@ -59,3 +59,31 @@ describe('MCPClient process spawning', () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('MCPClient.executeTool', () => {
+  test('returns success when callTool resolves', async () => {
+    const client = new MCPClient();
+    const callToolMock = jest.fn().mockResolvedValue({ foo: 'bar' });
+    (client as any).client = { callTool: callToolMock } as any;
+
+    const result = await client.executeTool('myTool', { a: 1 });
+
+    expect(callToolMock).toHaveBeenCalledWith({ name: 'myTool', arguments: { a: 1 } });
+    expect(result).toEqual({ status: 'success', data: { foo: 'bar' } });
+  });
+
+  test('returns error when callTool throws', async () => {
+    const client = new MCPClient();
+    const error = new Error('boom');
+    const callToolMock = jest.fn().mockRejectedValue(error);
+    (client as any).client = { callTool: callToolMock } as any;
+
+    const result = await client.executeTool('myTool', {});
+
+    expect(callToolMock).toHaveBeenCalledWith({ name: 'myTool', arguments: {} });
+    expect(result).toEqual({
+      status: 'error',
+      error: { message: 'boom', code: undefined }
+    });
+  });
+});
